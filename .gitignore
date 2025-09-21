@@ -1,0 +1,62 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+*.env
+.env.*
+!*.example.env
+!.env.example
+.pytest-tmp/
+.pytest-tmp-*/
+.pytest-tmp-run/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+
+# Node / frontend
+node_modules/
+dist/
+build/
+.next/
+.vite/
+services/frontend-dashboard/tsconfig.tsbuildinfo
+
+# IDE / OS
+.vscode/settings.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs and local artifacts
+*.log
+logs/
+artifacts/
+
+# Docker / local runtime
+.docker/
+local-data/
+
+# Kubernetes local access files
+.kube/
+kubeconfig
+kubeconfig.*
+*.kubeconfig
+
+# Secrets and certificates
+*.key
+*.pem
+*.crt
+secrets/
+
+# Terraform state, if a separate infrastructure profile is added later
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+terraform.tfvars
