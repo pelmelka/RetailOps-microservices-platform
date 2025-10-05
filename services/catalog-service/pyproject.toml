@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "catalog-service"
+version = "0.1.0"
+description = "Catalog service skeleton for RetailOps-microservices-platform."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "mwp-common==0.1.0",
+]
+
+[project.optional-dependencies]
+test = [
+    "httpx>=0.27,<1.0",
+    "pytest>=8,<9",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
