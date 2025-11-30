@@ -1,0 +1,294 @@
+x-backend-environment: &backend-environment
+  DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://retailops:retailops_local_password@postgres:5432/retailops}
+  REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+  JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me-local-development-secret}
+  JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+  JWT_ACCESS_TOKEN_EXPIRE_MINUTES: ${JWT_ACCESS_TOKEN_EXPIRE_MINUTES:-60}
+  DOCUMENT_STORAGE_DIR: ${DOCUMENT_STORAGE_DIR:-/var/lib/retailops/documents}
+  PAYMENT_PROVIDER: ${PAYMENT_PROVIDER:-local}
+  NOTIFICATION_PROVIDER: ${NOTIFICATION_PROVIDER:-local_smtp}
+  SMTP_HOST: ${SMTP_HOST:-mailpit}
+  SMTP_PORT: ${SMTP_PORT:-1025}
+  SMTP_FROM: ${SMTP_FROM:-no-reply@retailops.local}
+  AUTH_SERVICE_URL: ${AUTH_SERVICE_URL:-http://auth-service:8000}
+  CATALOG_SERVICE_URL: ${CATALOG_SERVICE_URL:-http://catalog-service:8000}
+  ORDER_SERVICE_URL: ${ORDER_SERVICE_URL:-http://order-service:8000}
+  DOCUMENT_SERVICE_URL: ${DOCUMENT_SERVICE_URL:-http://document-service:8000}
+  PAYMENT_SERVICE_URL: ${PAYMENT_SERVICE_URL:-http://payment-service:8000}
+  NOTIFICATION_SERVICE_URL: ${NOTIFICATION_SERVICE_URL:-http://notification-service:8000}
+  WORKFLOW_SERVICE_URL: ${WORKFLOW_SERVICE_URL:-http://workflow-service:8000}
+  UPSTREAM_TIMEOUT_SECONDS: ${UPSTREAM_TIMEOUT_SECONDS:-5}
+  GATEWAY_CORS_ALLOWED_ORIGINS: ${GATEWAY_CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:5173}
+
+services:
+  api-gateway:
+    container_name: retailops-api-gateway
+    image: retailops/api-gateway:local
+    build:
+      context: ../..
+      dockerfile: deploy/docker/backend-service.Dockerfile
+      args:
+        SERVICE_PATH: services/api-gateway
+        SERVICE_MODULE: api_gateway.main:app
+    ports:
+      - "8000:8000"
+    environment:
+      <<: *backend-environment
+    networks:
+      - retailops-local
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2).read()\""]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+  auth-service:
+    container_name: retailops-auth-service
+    image: retailops/auth-service:local
+    build:
+      context: ../..
+      dockerfile: deploy/docker/backend-service.Dockerfile
+      args:
+        SERVICE_PATH: services/auth-service
+        SERVICE_MODULE: auth_service.main:app
+    ports:
+      - "8001:8000"
+    environment:
+      <<: *backend-environment
+    networks:
+      - retailops-local
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2).read()\""]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+  catalog-service:
+    container_name: retailops-catalog-service
+    image: retailops/catalog-service:local
+    build:
+      context: ../..
+      dockerfile: deploy/docker/backend-service.Dockerfile
+      args:
+        SERVICE_PATH: services/catalog-service
+        SERVICE_MODULE: catalog_service.main:app
+    ports:
+      - "8002:8000"
+    environment:
+      <<: *backend-environment
+    networks:
+      - retailops-local
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2).read()\""]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+  order-service:
+    container_name: retailops-order-service
+    image: retailops/order-service:local
+    build:
+      context: ../..
+      dockerfile: deploy/docker/backend-service.Dockerfile
+      args:
+        SERVICE_PATH: services/order-service
+        SERVICE_MODULE: order_service.main:app
+    ports:
+      - "8003:8000"
+    environment:
+      <<: *backend-environment
+    networks:
+      - retailops-local
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2).read()\""]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+  payment-service:
+    container_name: retailops-payment-service
+    image: retailops/payment-service:local
+    build:
+      context: ../..
+      dockerfile: deploy/docker/backend-service.Dockerfile
+      args:
+        SERVICE_PATH: services/payment-service
+        SERVICE_MODULE: payment_service.main:app
+    ports:
+      - "8004:8000"
+    environment:
+      <<: *backend-environment
+    networks:
+      - retailops-local
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2).read()\""]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+  document-service:
+    container_name: retailops-document-service
+    image: retailops/document-service:local
+    build:
+      context: ../..
+      dockerfile: deploy/docker/backend-service.Dockerfile
+      args:
+        SERVICE_PATH: services/document-service
+        SERVICE_MODULE: document_service.main:app
+    ports:
+      - "8005:8000"
+    environment:
+      <<: *backend-environment
+    volumes:
+      - retailops-document-storage:/var/lib/retailops/documents
+    depends_on:
+      document-storage-init:
+        condition: service_completed_successfully
+    networks:
+      - retailops-local
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2).read()\""]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+  notification-service:
+    container_name: retailops-notification-service
+    image: retailops/notification-service:local
+    build:
+      context: ../..
+      dockerfile: deploy/docker/backend-service.Dockerfile
+      args:
+        SERVICE_PATH: services/notification-service
+        SERVICE_MODULE: notification_service.main:app
+    ports:
+      - "8006:8000"
+    environment:
+      <<: *backend-environment
+    depends_on:
+      - mailpit
+    networks:
+      - retailops-local
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2).read()\""]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+  workflow-service:
+    container_name: retailops-workflow-service
+    image: retailops/workflow-service:local
+    build:
+      context: ../..
+      dockerfile: deploy/docker/backend-service.Dockerfile
+      args:
+        SERVICE_PATH: services/workflow-service
+        SERVICE_MODULE: workflow_service.main:app
+    ports:
+      - "8007:8000"
+    environment:
+      <<: *backend-environment
+      WORKFLOW_WORKER_ENABLED: ${WORKFLOW_WORKER_ENABLED:-true}
+      WORKFLOW_WORKER_CONSUMER_NAME: ${WORKFLOW_WORKER_CONSUMER_NAME:-workflow-service-local}
+    networks:
+      - retailops-local
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2).read()\""]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+  frontend-dashboard:
+    container_name: retailops-frontend-dashboard
+    image: retailops/frontend-dashboard:local
+    build:
+      context: ../..
+      dockerfile: deploy/docker/frontend-dashboard.Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - api-gateway
+    networks:
+      - retailops-local
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/ >/dev/null"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+  document-storage-init:
+    container_name: retailops-document-storage-init
+    image: python:3.13-slim
+    command: ["sh", "-c", "mkdir -p /var/lib/retailops/documents && chown -R 100:101 /var/lib/retailops/documents"]
+    volumes:
+      - retailops-document-storage:/var/lib/retailops/documents
+    networks:
+      - retailops-local
+    restart: "no"
+
+  postgres:
+    container_name: retailops-postgres
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-retailops}
+      POSTGRES_USER: ${POSTGRES_USER:-retailops}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-retailops_local_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - retailops-postgres-data:/var/lib/postgresql/data
+    networks:
+      - retailops-local
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    container_name: retailops-redis
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - retailops-redis-data:/data
+    networks:
+      - retailops-local
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+  mailpit:
+    container_name: retailops-mailpit
+    image: axllent/mailpit:v1.21
+    expose:
+      - "1025"
+    ports:
+      - "8025:8025"
+    networks:
+      - retailops-local
+
+networks:
+  retailops-local:
+    name: retailops-local
+
+volumes:
+  retailops-postgres-data:
+    name: retailops-postgres-data
+  retailops-redis-data:
+    name: retailops-redis-data
+  retailops-document-storage:
+    name: retailops-document-storage
