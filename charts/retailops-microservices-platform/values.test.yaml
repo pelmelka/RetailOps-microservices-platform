@@ -1,0 +1,14 @@
+environment: test
+
+apiGateway:
+  corsAllowedOrigins: ""
+
+workflowService:
+  workerConsumerName: workflow-service-test
+
+ingress:
+  enabled: true
+  className: nginx
+  host: ""
+  tls:
+    enabled: false

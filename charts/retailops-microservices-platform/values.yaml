@@ -1,0 +1,189 @@
+global:
+  imageRegistry: retailops
+  imagePullPolicy: IfNotPresent
+  imagePullSecrets: []
+  storageClassName: ""
+
+images:
+  apiGateway:
+    repository: api-gateway
+    tag: local
+  authService:
+    repository: auth-service
+    tag: local
+  catalogService:
+    repository: catalog-service
+    tag: local
+  orderService:
+    repository: order-service
+    tag: local
+  paymentService:
+    repository: payment-service
+    tag: local
+  documentService:
+    repository: document-service
+    tag: local
+  notificationService:
+    repository: notification-service
+    tag: local
+  workflowService:
+    repository: workflow-service
+    tag: local
+  frontendDashboard:
+    repository: frontend-dashboard
+    tag: local
+
+environment: local
+logLevel: INFO
+
+common:
+  workflowCommandsStream: project.workflow.commands
+  workflowEventsStream: project.workflow.events
+  workflowDeadLetterStream: project.workflow.dead_letter
+  paymentProvider: local
+  notificationProvider: local_smtp
+  jwtAlgorithm: HS256
+  jwtAccessTokenExpireMinutes: "60"
+
+appSecrets:
+  jwtSecretKey: change-me-local-development-secret
+  databaseUrl: ""
+  redisUrl: redis://redis:6379/0
+
+resources:
+  default:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+backend:
+  containerPort: 8000
+  servicePort: 8000
+  readinessPath: /ready
+  livenessPath: /health
+
+apiGateway:
+  replicas: 2
+  upstreamTimeoutSeconds: "5"
+  corsAllowedOrigins: http://localhost:3000,http://localhost:5173
+  resources: {}
+
+workflowService:
+  replicas: 1
+  upstreamTimeoutSeconds: "5"
+  workerEnabled: "true"
+  workerConsumerName: workflow-service-k8s
+  resources: {}
+
+backendServices:
+  auth-service:
+    enabled: true
+    replicas: 1
+    resources: {}
+  catalog-service:
+    enabled: true
+    replicas: 1
+    resources: {}
+  order-service:
+    enabled: true
+    replicas: 1
+    resources: {}
+  payment-service:
+    enabled: true
+    replicas: 1
+    resources: {}
+  document-service:
+    enabled: true
+    replicas: 1
+    resources: {}
+  notification-service:
+    enabled: true
+    replicas: 1
+    resources: {}
+
+frontend:
+  replicas: 2
+  servicePort: 3000
+  containerPort: 80
+  resources: {}
+
+postgres:
+  replicas: 1
+  image:
+    repository: postgres
+    tag: 16-alpine
+    pullPolicy: IfNotPresent
+  servicePort: 5432
+  auth:
+    database: retailops
+    username: retailops
+    password: retailops_local_password
+  storage:
+    accessMode: ReadWriteOnce
+    size: 1Gi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+redis:
+  replicas: 1
+  image:
+    repository: redis
+    tag: 7-alpine
+    pullPolicy: IfNotPresent
+  servicePort: 6379
+  storage:
+    accessMode: ReadWriteOnce
+    size: 1Gi
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+documentStorage:
+  enabled: true
+  accessMode: ReadWriteOnce
+  size: 1Gi
+  mountPath: /var/lib/retailops/documents
+
+mailpit:
+  replicas: 1
+  image:
+    repository: axllent/mailpit
+    tag: v1.21
+    pullPolicy: IfNotPresent
+  smtpPort: 1025
+  uiPort: 8025
+  smtpFrom: no-reply@retailops.local
+  resources:
+    requests:
+      cpu: 25m
+      memory: 64Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+
+bootstrap:
+  enabled: true
+  backoffLimit: 3
+  activeDeadlineSeconds: 300
+  command:
+    - python
+    - scripts/db/bootstrap_local_db.py
+
+ingress:
+  enabled: false
+  className: nginx
+  host: ""
+  tls:
+    enabled: false
