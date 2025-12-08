@@ -1,0 +1,68 @@
+global:
+  imageRegistry: registry.internal/retailops/retailops-microservices-platform
+  imagePullPolicy: IfNotPresent
+  imagePullSecrets:
+    - name: gitlab-registry
+  storageClassName: standard-rwo
+
+environment: test
+
+apiGateway:
+  replicas: 1
+  corsAllowedOrigins: http://test.retailops.internal
+  resources:
+    requests:
+      cpu: 100m
+      memory: 192Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+workflowService:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 192Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+frontend:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 50m
+      memory: 96Mi
+    limits:
+      cpu: 300m
+      memory: 256Mi
+
+resources:
+  default:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+postgres:
+  replicas: 1
+  storage:
+    size: 5Gi
+
+redis:
+  replicas: 1
+  storage:
+    size: 2Gi
+
+documentStorage:
+  size: 5Gi
+
+ingress:
+  enabled: true
+  className: nginx
+  host: test.retailops.internal
+  tls:
+    enabled: false

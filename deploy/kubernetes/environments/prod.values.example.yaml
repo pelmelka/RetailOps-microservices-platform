@@ -1,0 +1,99 @@
+global:
+  imageRegistry: registry.internal/retailops/retailops-microservices-platform
+  imagePullPolicy: IfNotPresent
+  imagePullSecrets:
+    - name: gitlab-registry
+  storageClassName: standard-rwo
+
+environment: prod
+
+resources:
+  default:
+    requests:
+      cpu: 100m
+      memory: 192Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+
+apiGateway:
+  replicas: 2
+  corsAllowedOrigins: http://retailops.internal
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "1500m"
+      memory: 1Gi
+
+workflowService:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+
+backendServices:
+  auth-service:
+    replicas: 2
+  catalog-service:
+    replicas: 2
+  order-service:
+    replicas: 2
+  payment-service:
+    replicas: 2
+  # Keep one replica while document storage uses a single RWO claim.
+  document-service:
+    replicas: 1
+  notification-service:
+    replicas: 2
+
+frontend:
+  replicas: 2
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# Single-instance in-cluster profile. PostgreSQL HA is intentionally external.
+postgres:
+  replicas: 1
+  storage:
+    size: 50Gi
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: "2"
+      memory: 4Gi
+
+# Single-instance in-cluster profile. Redis HA is intentionally external.
+redis:
+  replicas: 1
+  storage:
+    size: 10Gi
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 2Gi
+
+documentStorage:
+  size: 50Gi
+
+ingress:
+  enabled: true
+  className: nginx
+  host: retailops.internal
+  tls:
+    enabled: false
