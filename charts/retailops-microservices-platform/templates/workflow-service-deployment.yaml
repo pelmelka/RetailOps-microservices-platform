@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: workflow-service
+  labels:
+    {{- include "mwp.componentLabels" (dict "root" . "component" "workflow-service") | nindent 4 }}
+spec:
+  replicas: {{ .Values.workflowService.replicas }}
+  selector:
+    matchLabels:
+      {{- include "mwp.componentSelectorLabels" (dict "root" . "component" "workflow-service") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "mwp.componentSelectorLabels" (dict "root" . "component" "workflow-service") | nindent 8 }}
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: workflow-service
+          image: {{ include "mwp.image" (dict "root" . "image" .Values.images.workflowService) | quote }}
+          imagePullPolicy: {{ include "mwp.imagePullPolicy" (dict "root" . "image" .Values.images.workflowService) }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.backend.containerPort }}
+          envFrom:
+            - configMapRef:
+                name: app-config
+            - configMapRef:
+                name: workflow-service-config
+            - secretRef:
+                name: app-secrets
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.backend.readinessPath }}
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.backend.livenessPath }}
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            {{- include "mwp.backendResources" (dict "root" . "resources" .Values.workflowService.resources) | nindent 12 }}

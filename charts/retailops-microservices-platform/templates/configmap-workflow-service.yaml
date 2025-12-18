@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: workflow-service-config
+  labels:
+    {{- include "mwp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: workflow-service
+data:
+  ORDER_SERVICE_URL: "http://order-service:8000"
+  CATALOG_SERVICE_URL: "http://catalog-service:8000"
+  DOCUMENT_SERVICE_URL: "http://document-service:8000"
+  PAYMENT_SERVICE_URL: "http://payment-service:8000"
+  NOTIFICATION_SERVICE_URL: "http://notification-service:8000"
+  UPSTREAM_TIMEOUT_SECONDS: {{ .Values.workflowService.upstreamTimeoutSeconds | quote }}
+  WORKFLOW_WORKER_ENABLED: {{ .Values.workflowService.workerEnabled | quote }}
+  WORKFLOW_WORKER_CONSUMER_NAME: {{ .Values.workflowService.workerConsumerName | quote }}
+  WORKFLOW_COMMANDS_STREAM: {{ .Values.common.workflowCommandsStream | quote }}
+  WORKFLOW_EVENTS_STREAM: {{ .Values.common.workflowEventsStream | quote }}
+  WORKFLOW_DEAD_LETTER_STREAM: {{ .Values.common.workflowDeadLetterStream | quote }}

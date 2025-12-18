@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: workflow-service
+  labels:
+    {{- include "mwp.componentLabels" (dict "root" . "component" "workflow-service") | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "mwp.componentSelectorLabels" (dict "root" . "component" "workflow-service") | nindent 4 }}
+  ports:
+    - name: http
+      port: {{ .Values.backend.servicePort }}
+      targetPort: http

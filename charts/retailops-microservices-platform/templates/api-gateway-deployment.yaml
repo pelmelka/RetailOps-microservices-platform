@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+  labels:
+    {{- include "mwp.componentLabels" (dict "root" . "component" "api-gateway") | nindent 4 }}
+spec:
+  replicas: {{ .Values.apiGateway.replicas }}
+  selector:
+    matchLabels:
+      {{- include "mwp.componentSelectorLabels" (dict "root" . "component" "api-gateway") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "mwp.componentSelectorLabels" (dict "root" . "component" "api-gateway") | nindent 8 }}
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: api-gateway
+          image: {{ include "mwp.image" (dict "root" . "image" .Values.images.apiGateway) | quote }}
+          imagePullPolicy: {{ include "mwp.imagePullPolicy" (dict "root" . "image" .Values.images.apiGateway) }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.backend.containerPort }}
+          envFrom:
+            - configMapRef:
+                name: app-config
+            - configMapRef:
+                name: api-gateway-config
+            - secretRef:
+                name: app-secrets
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.backend.readinessPath }}
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.backend.livenessPath }}
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            {{- include "mwp.backendResources" (dict "root" . "resources" .Values.apiGateway.resources) | nindent 12 }}
