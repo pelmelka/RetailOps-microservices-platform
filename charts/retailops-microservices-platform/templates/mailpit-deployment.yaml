@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mailpit
+  labels:
+    {{- include "mwp.componentLabels" (dict "root" . "component" "mailpit") | nindent 4 }}
+spec:
+  replicas: {{ .Values.mailpit.replicas }}
+  selector:
+    matchLabels:
+      {{- include "mwp.componentSelectorLabels" (dict "root" . "component" "mailpit") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "mwp.componentSelectorLabels" (dict "root" . "component" "mailpit") | nindent 8 }}
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: mailpit
+          image: {{ include "mwp.externalImage" .Values.mailpit.image | quote }}
+          imagePullPolicy: {{ .Values.mailpit.image.pullPolicy }}
+          ports:
+            - name: smtp
+              containerPort: {{ .Values.mailpit.smtpPort }}
+            - name: http
+              containerPort: {{ .Values.mailpit.uiPort }}
+          readinessProbe:
+            tcpSocket:
+              port: smtp
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: smtp
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            {{- toYaml .Values.mailpit.resources | nindent 12 }}

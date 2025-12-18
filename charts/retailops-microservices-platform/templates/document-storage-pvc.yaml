@@ -1,0 +1,17 @@
+{{- if .Values.documentStorage.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: document-storage
+  labels:
+    {{- include "mwp.componentLabels" (dict "root" . "component" "document-storage") | nindent 4 }}
+spec:
+  {{- with .Values.global.storageClassName }}
+  storageClassName: {{ . | quote }}
+  {{- end }}
+  accessModes:
+    - {{ .Values.documentStorage.accessMode }}
+  resources:
+    requests:
+      storage: {{ .Values.documentStorage.size }}
+{{- end }}

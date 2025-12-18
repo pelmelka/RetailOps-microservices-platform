@@ -1,0 +1,50 @@
+{{- if .Values.bootstrap.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: bootstrap-db
+  labels:
+    {{- include "mwp.componentLabels" (dict "root" . "component" "bootstrap-db") | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "10"
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  backoffLimit: {{ .Values.bootstrap.backoffLimit }}
+  activeDeadlineSeconds: {{ .Values.bootstrap.activeDeadlineSeconds }}
+  template:
+    metadata:
+      labels:
+        {{- include "mwp.componentSelectorLabels" (dict "root" . "component" "bootstrap-db") | nindent 8 }}
+    spec:
+      restartPolicy: OnFailure
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      initContainers:
+        - name: wait-postgres
+          image: {{ include "mwp.externalImage" .Values.postgres.image | quote }}
+          imagePullPolicy: {{ .Values.postgres.image.pullPolicy }}
+          envFrom:
+            - secretRef:
+                name: postgres-secret
+          command:
+            - sh
+            - -ec
+            - |
+              until pg_isready -h postgres -p {{ .Values.postgres.servicePort }} -U "$POSTGRES_USER" -d "$POSTGRES_DB"; do
+                sleep 2
+              done
+      containers:
+        - name: bootstrap-db
+          image: {{ include "mwp.image" (dict "root" . "image" .Values.images.apiGateway) | quote }}
+          imagePullPolicy: {{ include "mwp.imagePullPolicy" (dict "root" . "image" .Values.images.apiGateway) }}
+          envFrom:
+            - configMapRef:
+                name: app-config
+            - secretRef:
+                name: app-secrets
+          command:
+            {{- toYaml .Values.bootstrap.command | nindent 12 }}
+{{- end }}
